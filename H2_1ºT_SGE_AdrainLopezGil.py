@@ -4,7 +4,9 @@ import mysql.connector
 import pandas as pd
 import matplotlib.pyplot as plt
 
+# Clase principal que inicializa la aplicación y gestiona la conexión a la base de datos.
 class EncuestaApp:
+    # Inicializa la aplicación, configura la ventana principal y conecta con la base de datos.
     def __init__(self, root):
         self.root = root
         self.root.title("Gestión de Encuestas")
@@ -19,7 +21,8 @@ class EncuestaApp:
         self.cursor = self.conn.cursor()
         
         self.create_widgets()
-        
+    
+    # Crea y organiza los widgets principales de la interfaz gráfica.
     def create_widgets(self):
         # Configurar una estructura de columnas más equilibrada
         self.root.grid_columnconfigure(0, weight=1)
@@ -32,6 +35,7 @@ class EncuestaApp:
         self.create_treeview_section()
         self.create_filter_section()
 
+    # Configura la sección de entrada de datos de las encuestas
     def create_input_section(self):
         input_frame = tk.LabelFrame(self.root, text="Datos de Encuesta", padx=10, pady=10)
         input_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
@@ -50,6 +54,7 @@ class EncuestaApp:
         self.tension_alta_entry = self.create_label_entry(input_frame, "Tensión Alta:", 10)
         self.dolor_cabeza_entry = self.create_label_entry(input_frame, "Dolor de Cabeza:", 11)
 
+    # Configura los botones para realizar acciones como agregar, eliminar, ver encuestas, etc.
     def create_button_section(self):
         button_frame = tk.LabelFrame(self.root, text="Acciones", padx=10, pady=10)
         button_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
@@ -65,6 +70,7 @@ class EncuestaApp:
         self.create_button(button_frame, "Aplicar Filtros", self.apply_filters, 7, 0)
         self.create_button(button_frame, "Exportar a Excel", self.export_to_excel, 8, 0)
 
+    # Crea el Treeview donde se muestran las encuestas almacenadas.
     def create_treeview_section(self):
         treeview_frame = tk.LabelFrame(self.root, text="Lista de Encuestas", padx=10, pady=10)
         treeview_frame.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky="nsew")
@@ -79,6 +85,7 @@ class EncuestaApp:
             self.tree.column(col, width=100, anchor="center")
         self.tree.pack(fill="both", expand=True)
 
+    # Configura la sección de filtros para buscar encuestas según ciertos criterios.
     def create_filter_section(self):
         filter_frame = tk.LabelFrame(self.root, text="Filtros", padx=10, pady=10)
         filter_frame.grid(row=0, column=2, padx=10, pady=10, sticky="nsew")
@@ -89,15 +96,18 @@ class EncuestaApp:
         self.filter_sexo_entry = self.create_label_entry(filter_frame, "Sexo:", 2)
         self.filter_bebidas_semana_entry = self.create_label_entry(filter_frame, "Bebidas Semana:", 3)
 
+    # Crea un par etiqueta-campo de entrada para un campo específico.
     def create_label_entry(self, frame, label, row):
         tk.Label(frame, text=label).grid(row=row, column=0, sticky="w")
         entry = tk.Entry(frame)
         entry.grid(row=row, column=1, padx=5, pady=2)
         return entry
 
+    # Crea un botón y lo posiciona en el frame especificado.
     def create_button(self, frame, text, command, row, column):
         tk.Button(frame, text=text, command=command, width=20).grid(row=row, column=column, pady=5, padx=5)
 
+    # Agrega una nueva encuesta a la base de datos con los datos ingresados en los campos.
     def add_encuesta(self):
         try:
             edad = int(self.edad_entry.get())
@@ -122,6 +132,7 @@ class EncuestaApp:
         except Exception as e:
             messagebox.showerror("Error", f"Error al agregar la encuesta: {e}")
 
+    # Muestra todas las encuestas almacenadas en la base de datos en el Treeview.
     def view_encuestas(self):
         self.cursor.execute("SELECT * FROM ENCUESTA")
         encuestas = self.cursor.fetchall()
@@ -129,6 +140,7 @@ class EncuestaApp:
         for encuesta in encuestas:
             self.tree.insert("", tk.END, values=encuesta)
 
+    # Elimina una encuesta seleccionada del Treeview y de la base de datos.
     def eliminar_encuesta(self):
         seleccion = self.tree.focus()
         if not seleccion:
@@ -141,6 +153,7 @@ class EncuestaApp:
         self.tree.delete(seleccion)
         messagebox.showinfo("Éxito", "Encuesta eliminada correctamente.")
 
+    # Aplica los filtros ingresados en la sección correspondiente y actualiza el Treeview.
     def apply_filters(self):
         edad = self.filter_edad_entry.get()
         sexo = self.filter_sexo_entry.get()
@@ -164,6 +177,7 @@ class EncuestaApp:
         for row in filtered_data:
             self.tree.insert("", tk.END, values=row)
 
+    # Exporta los datos filtrados del Treeview a un archivo Excel.
     def export_to_excel(self):
         # Obtener los datos filtrados
         self.apply_filters()
@@ -182,6 +196,7 @@ class EncuestaApp:
         df.to_excel(file_name, index=False)
         messagebox.showinfo("Éxito", f"Datos exportados correctamente a {file_name}.")
 
+    # Genera un gráfico de distribución de edades basándose en los datos de la base de datos.
     def show_age_distribution(self):
         self.cursor.execute("SELECT Edad FROM ENCUESTA")
         edades = [row[0] for row in self.cursor.fetchall()]
@@ -191,6 +206,7 @@ class EncuestaApp:
         plt.ylabel("Frecuencia")
         plt.show()
 
+    # Genera un gráfico que muestra el consumo de alcohol por edades.
     def show_alcohol_consumption_by_age(self):
         self.cursor.execute("SELECT Edad, BebidasSemana FROM ENCUESTA")
         data = self.cursor.fetchall()
@@ -202,9 +218,11 @@ class EncuestaApp:
         plt.ylabel("Bebidas por Semana")
         plt.show()
 
+    # Carga todos los datos de la base de datos en el Treeview.
     def load_data(self):
         self.view_encuestas()
 
+    # Actualiza una encuesta seleccionada en el Treeview con los datos ingresados en los campos.
     def update_data(self):
         seleccion = self.tree.focus()
         if not seleccion:
